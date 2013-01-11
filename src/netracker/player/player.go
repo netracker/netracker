@@ -9,6 +9,10 @@ type Player struct {
 	Role string
 }
 
-func NewPlayer(role string) *Player {
-	return &Player{Role: role}
+func NewRunner() *Player {
+	return &Player{Role: RUNNER}
+}
+
+func NewCorp() *Player {
+	return &Player{Role: CORP}
 }

@@ -39,10 +39,10 @@ func (game *Game) RemoveCorpCredit() {
 	}
 }
 
-func NewGame() *Game {
+func New() *Game {
 	return &Game{
-		ActivePlayer:   player.NewPlayer(player.CORP),
-		InactivePlayer: player.NewPlayer(player.RUNNER),
+		ActivePlayer:   player.NewCorp(),
+		InactivePlayer: player.NewRunner(),
 		CorpCredits:    5,
 		RunnerCredits:  5,
 		Clicks:         0,

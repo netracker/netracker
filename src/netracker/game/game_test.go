@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewGame(t *testing.T) {
-	game := NewGame()
+	game := New()
 	assert.Equal(t, game.ActivePlayer.Role, player.CORP)
 	assert.Equal(t, game.InactivePlayer.Role, player.RUNNER)
 	assert.Equal(t, game.CorpCredits, 5)
@@ -15,28 +15,28 @@ func TestNewGame(t *testing.T) {
 }
 
 func TestNextTurn(t *testing.T) {
-	game := NewGame()
+	game := New()
 	game.NextTurn()
 	assert.Equal(t, game.ActivePlayer.Role, player.RUNNER)
 	assert.Equal(t, game.InactivePlayer.Role, player.CORP)
 }
 
 func TestNextTurnResetsClicks(t *testing.T) {
-	game := NewGame()
+	game := New()
 	game.Clicks = 4
 	game.NextTurn()
 	assert.Equal(t, game.Clicks, 0)
 }
 
 func TestUseClickIncreasesClicksForActivePlayer(t *testing.T) {
-	game := NewGame()
+	game := New()
 	assert.Equal(t, game.Clicks, 0)
 	game.UseClick()
 	assert.Equal(t, game.Clicks, 1)
 }
 
 func TestAddCorpCredit(t *testing.T) {
-	game := NewGame()
+	game := New()
 
 	assert.Equal(t, game.CorpCredits, 5)
 	game.AddCorpCredit()
@@ -44,7 +44,7 @@ func TestAddCorpCredit(t *testing.T) {
 }
 
 func TestAddRunnerCredit(t *testing.T) {
-	game := NewGame()
+	game := New()
 
 	assert.Equal(t, game.RunnerCredits, 5)
 	game.AddRunnerCredit()
@@ -52,7 +52,7 @@ func TestAddRunnerCredit(t *testing.T) {
 }
 
 func TestRemoveRunnerCredit(t *testing.T) {
-	game := NewGame()
+	game := New()
 
 	assert.Equal(t, game.RunnerCredits, 5)
 	game.RemoveRunnerCredit()
@@ -60,7 +60,7 @@ func TestRemoveRunnerCredit(t *testing.T) {
 }
 
 func TestRemoveRunnerCreditFloorsAtZero(t *testing.T) {
-	game := NewGame()
+	game := New()
 	game.RunnerCredits = 0
 
 	game.RemoveRunnerCredit()
@@ -68,7 +68,7 @@ func TestRemoveRunnerCreditFloorsAtZero(t *testing.T) {
 }
 
 func TestRemoveCorpCredit(t *testing.T) {
-	game := NewGame()
+	game := New()
 
 	assert.Equal(t, game.CorpCredits, 5)
 	game.RemoveCorpCredit()
@@ -76,7 +76,7 @@ func TestRemoveCorpCredit(t *testing.T) {
 }
 
 func TestRemoveCorpCreditFloorsAtZero(t *testing.T) {
-	game := NewGame()
+	game := New()
 	game.CorpCredits = 0
 
 	game.RemoveCorpCredit()

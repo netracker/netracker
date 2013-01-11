@@ -5,7 +5,12 @@ import (
 	"testing"
 )
 
-func TestNewPlayerBuildsAPlayerWithARole(t *testing.T) {
-	player := NewPlayer(RUNNER)
+func TestNewRunnerBuildsPlayerWithCorrectRole(t *testing.T) {
+	player := NewRunner()
 	assert.Equal(t, player.Role, RUNNER)
+}
+
+func TestNewCorpBuildsPlayerWithCorrectRole(t *testing.T) {
+	player := NewCorp()
+	assert.Equal(t, player.Role, CORP)
 }
