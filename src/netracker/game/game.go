@@ -10,6 +10,16 @@ type Game struct {
 	Clicks         int
 }
 
+func New() *Game {
+	return &Game{
+		ActivePlayer:   player.NewCorp(),
+		InactivePlayer: player.NewRunner(),
+		CorpCredits:    5,
+		RunnerCredits:  5,
+		Clicks:         0,
+	}
+}
+
 func (game *Game) NextTurn() {
 	game.ActivePlayer, game.InactivePlayer = game.InactivePlayer, game.ActivePlayer
 	game.Clicks = 0
@@ -36,15 +46,5 @@ func (game *Game) RemoveRunnerCredit() {
 func (game *Game) RemoveCorpCredit() {
 	if game.CorpCredits != 0 {
 		game.CorpCredits -= 1
-	}
-}
-
-func New() *Game {
-	return &Game{
-		ActivePlayer:   player.NewCorp(),
-		InactivePlayer: player.NewRunner(),
-		CorpCredits:    5,
-		RunnerCredits:  5,
-		Clicks:         0,
 	}
 }
