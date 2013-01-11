@@ -19,6 +19,7 @@ end
 
 desc "clean compiled files and binaries"
 task :clean do
+  rm_rf abs_path("bin")
   rm_rf abs_path("pkg")
 end
 
