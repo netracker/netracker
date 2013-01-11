@@ -1,3 +1,4 @@
+require "rubygems"
 require "json"
 
 def abs_path(path)
