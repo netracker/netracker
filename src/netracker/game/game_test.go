@@ -82,3 +82,16 @@ func TestRemoveCorpCreditFloorsAtZero(t *testing.T) {
 	game.RemoveCorpCredit()
 	assert.Equal(t, game.CorpCredits, 0)
 }
+
+func TestToJson(t *testing.T) {
+	game := &Game{
+		ActivePlayer:   player.NewCorp(),
+		InactivePlayer: player.NewRunner(),
+		CorpCredits:    5,
+		RunnerCredits:  5,
+		Clicks:         0,
+	}
+
+	expectedJson := "{\"ActivePlayer\":{\"Role\":\"corp\"},\"InactivePlayer\":{\"Role\":\"runner\"},\"CorpCredits\":5,\"RunnerCredits\":5,\"Clicks\":0}"
+	assert.Equal(t, game.ToJson(), expectedJson)
+}

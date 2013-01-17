@@ -3,12 +3,13 @@
     <title>Netracker</title>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js" type="text/javascript"></script>
     <script type="text/javascript">
-      var conn, $currentTurn, $clicks, $turn, $game;
+      var conn, $currentTurn, $clicks, $runnerCredits, $corpCredits, $game;
 
       var syncState = function(state) {
-        $currentTurn.html(state.CurrentPlayerRole);
-        $clicks.html(state.RemainingClicks);
-        $turn.html(state.Turn);
+        $currentTurn.html(state.ActivePlayer.Role);
+        $clicks.html(state.Clicks);
+        $runnerCredits.html(state.RunnerCredits);
+        $corpCredits.html(state.CorpCredits);
       };
 
       var bindToMessage = function ($object, message) {
@@ -22,10 +23,12 @@
         conn = new WebSocket(url);
 
         conn.onopen = function(e) {
+          console.log("WS Open");
           $game.show();
         }
 
         conn.onclose = function(e) {
+          console.log("WS Close");
           $game.hide();
         }
 
@@ -35,19 +38,24 @@
       $(function () {
         $currentTurn = $("#currentTurn");
         $clicks = $("#clicks");
-        $turn = $("#turn");
+        $runnerCredits = $("#runnerCredits");
+        $corpCredits = $("#corpCredits");
         $game = $("#game");
 
         $game.hide();
 
         bindToMessage($("#click"), "click");
-        bindToMessage($("#addClick"), "addclick");
         bindToMessage($("#nextTurn"), "nextturn");
+        bindToMessage($("#addCorpCredit"), "addcorpcredit");
+        bindToMessage($("#addRunnerCredit"), "addrunnercredit");
+        bindToMessage($("#removeCorpCredit"), "removecorpcredit");
+        bindToMessage($("#removeRunnerCredit"), "removerunnercredit");
 
         conn = initConn("ws://localhost:3000/ws")
 
         conn.onmessage = function(e) {
           state = JSON.parse(e.data);
+          console.log(state);
           syncState(state);
         }
       });
@@ -57,10 +65,14 @@
     <ul id="game">
       <li>Current Turn: <span id="currentTurn"></span></li>
       <li>Clicks: <span id="clicks"></span></li>
-      <li>Turn: <span id="turn"></span></li>
+      <li>Runner Credits: <span id="runnerCredits"></span></li>
+      <li>Corp Credits: <span id="corpCredits"></span></li>
       <li><a href="#" id="click">click</a></li>
       <li><a href="#" id="nextTurn">next turn</a></li>
-      <li><a href="#" id="addClick">add click</a></li>
+      <li><a href="#" id="addCorpCredit">add corp credit</a></li>
+      <li><a href="#" id="addRunnerCredit">add runner credit</a></li>
+      <li><a href="#" id="removeCorpCredit">remove corp credit</a></li>
+      <li><a href="#" id="removeRunnerCredit">remove runner credit</a></li>
     </ul>
   </body>
 </html>

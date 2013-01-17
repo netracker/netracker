@@ -1,6 +1,9 @@
 package game
 
-import "netracker/player"
+import (
+	"encoding/json"
+	"netracker/player"
+)
 
 type Game struct {
 	ActivePlayer   *player.Player
@@ -47,4 +50,9 @@ func (game *Game) RemoveCorpCredit() {
 	if game.CorpCredits != 0 {
 		game.CorpCredits -= 1
 	}
+}
+
+func (game *Game) ToJson() string {
+	rawJson, _ := json.Marshal(game)
+	return string(rawJson)
 }

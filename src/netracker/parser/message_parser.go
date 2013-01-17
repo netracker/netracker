@@ -8,7 +8,11 @@ type MessageParser struct {
 	game *game.Game
 }
 
-func (parser *MessageParser) parse(message string) {
+func New(game *game.Game) *MessageParser {
+	return &MessageParser{game: game}
+}
+
+func (parser *MessageParser) Parse(message string) {
 	switch message {
 	case "nextturn":
 		parser.game.NextTurn()
