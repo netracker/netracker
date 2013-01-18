@@ -12,7 +12,6 @@ import (
 type Server struct {
 	connectionManager *connection_manager.ConnectionManager
 	messageParser     *parser.MessageParser
-	websocketHandler  func(conn *websocket.Conn)
 	game              *game.Game
 }
 
@@ -21,12 +20,6 @@ func New(game *game.Game, messageParser *parser.MessageParser) *Server {
 		connectionManager: connection_manager.New(),
 		messageParser:     messageParser,
 		game:              game,
-	}
-
-	server.websocketHandler = func(conn *websocket.Conn) {
-		server.connectionManager.AddConn(conn)
-		websocket.Message.Send(conn, server.game.ToJson())
-		server.reader(conn)
 	}
 
 	return server
@@ -59,7 +52,11 @@ func (server *Server) Run() {
 	go server.connectionManager.Run()
 
 	http.Handle("/", http.FileServer(http.Dir("public")))
-	http.Handle("/ws", websocket.Handler(server.websocketHandler))
+	http.Handle("/ws", websocket.Handler(func(conn *websocket.Conn) {
+		server.connectionManager.AddConn(conn)
+		websocket.Message.Send(conn, server.game.ToJson())
+		server.reader(conn)
+	}))
 
 	err := http.ListenAndServe(":3000", nil)
 	if err != nil {
