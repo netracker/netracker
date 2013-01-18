@@ -1,9 +1,12 @@
 package server
 
 import (
+	"encoding/json"
 	"github.com/bmizerany/assert"
 	"github.com/drewolson/testflight"
 	"github.com/drewolson/testflight/ws"
+	"netracker/game"
+	"netracker/player"
 	"testing"
 )
 
@@ -22,14 +25,19 @@ func TestRoot(t *testing.T) {
 	})
 }
 
-func TestWebsocketConnect(t *testing.T) {
+func TestWebsocketInitialGameState(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		connection := ws.Connect(r, "/ws")
+
 		message := connection.ReceiveMessage()
 		connection.WriteMessage("quit")
 
-		expectedMessage := `{"ActivePlayer":{"Role":"corp"},"InactivePlayer":{"Role":"runner"},"CorpCredits":5,"RunnerCredits":5,"Clicks":0}`
+		game := game.Game{}
+		json.Unmarshal([]byte(message), &game)
 
-		assert.Equal(t, expectedMessage, message)
+		assert.Equal(t, 5, game.CorpCredits)
+		assert.Equal(t, 5, game.RunnerCredits)
+		assert.Equal(t, player.CORP, game.ActivePlayer.Role)
+		assert.Equal(t, 0, game.Clicks)
 	})
 }
