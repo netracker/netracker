@@ -7,6 +7,7 @@ import (
 	"netracker/connection_manager"
 	"netracker/game"
 	"netracker/parser"
+	"netracker/util"
 )
 
 type Server struct {
@@ -15,9 +16,13 @@ type Server struct {
 	game              *game.Game
 }
 
-func New(game *game.Game, messageParser *parser.MessageParser) *Server {
+func New() *Server {
+	game := game.New()
+	messageParser := parser.New(game)
+	connectionManager := connection_manager.New()
+
 	server := &Server{
-		connectionManager: connection_manager.New(),
+		connectionManager: connectionManager,
 		messageParser:     messageParser,
 		game:              game,
 	}
@@ -47,18 +52,25 @@ func (server *Server) reader(conn *websocket.Conn) {
 	conn.Close()
 }
 
-func (server *Server) Run() {
-	log.Print("Starting Netracker Server: http://localhost:3000")
-	go server.connectionManager.Run()
+func (server *Server) handler() http.Handler {
+	mux := http.NewServeMux()
 
-	http.Handle("/", http.FileServer(http.Dir("public")))
-	http.Handle("/ws", websocket.Handler(func(conn *websocket.Conn) {
+	mux.Handle("/", http.FileServer(http.Dir(util.RelativePath("/../../../public"))))
+	mux.Handle("/ws", websocket.Handler(func(conn *websocket.Conn) {
 		server.connectionManager.AddConn(conn)
 		websocket.Message.Send(conn, server.game.ToJson())
 		server.reader(conn)
 	}))
 
-	err := http.ListenAndServe(":3000", nil)
+	return mux
+}
+
+func (server *Server) Run() {
+	log.Print("Starting Netracker Server: http://localhost:3000")
+
+	go server.connectionManager.Run()
+	err := http.ListenAndServe(":3000", server.handler())
+
 	if err != nil {
 		log.Printf("error %v", err)
 	}
