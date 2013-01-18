@@ -1,6 +1,7 @@
 [
   "github.com/bmizerany/assert",
   "github.com/drewolson/testflight",
+  "github.com/drewolson/testflight/ws",
   "github.com/kr/pretty",
   "code.google.com/p/go.net/websocket"
 ]

@@ -7,12 +7,14 @@ import (
 type ConnectionManager struct {
 	connections []*websocket.Conn
 	register    chan *websocket.Conn
+	stop        chan bool
 }
 
 func New() *ConnectionManager {
 	return &ConnectionManager{
 		connections: []*websocket.Conn{},
 		register:    make(chan *websocket.Conn),
+		stop:        make(chan bool),
 	}
 }
 
@@ -27,8 +29,18 @@ func (manager *ConnectionManager) Broadcast(message string) {
 }
 
 func (manager *ConnectionManager) Run() {
-	for {
-		conn := <-manager.register
-		manager.connections = append(manager.connections, conn)
-	}
+	go func() {
+		for {
+			select {
+			case conn := <-manager.register:
+				manager.connections = append(manager.connections, conn)
+			case <-manager.stop:
+				return
+			}
+		}
+	}()
+}
+
+func (manager *ConnectionManager) Stop() {
+	manager.stop <- true
 }

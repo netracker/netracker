@@ -43,6 +43,11 @@ func (server *Server) receiveWebsocketMessage(conn *websocket.Conn) (message str
 func (server *Server) reader(conn *websocket.Conn) {
 	for {
 		message := server.receiveWebsocketMessage(conn)
+
+		if message == "quit" {
+			return
+		}
+
 		log.Printf("Got message: %v", message)
 
 		server.messageParser.Parse(message)
@@ -68,7 +73,7 @@ func (server *Server) handler() http.Handler {
 func (server *Server) Run() {
 	log.Print("Starting Netracker Server: http://localhost:3000")
 
-	go server.connectionManager.Run()
+	server.connectionManager.Run()
 	err := http.ListenAndServe(":3000", server.handler())
 
 	if err != nil {
