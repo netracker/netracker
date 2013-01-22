@@ -41,3 +41,19 @@ func TestWebsocketInitialGameState(t *testing.T) {
 		assert.Equal(t, 0, game.Clicks)
 	})
 }
+
+func TestWebSocketAcceptsMessages(t *testing.T) {
+	withServer(func(r *testflight.Requester) {
+		connection := ws.Connect(r, "/ws")
+		_ = connection.ReceiveMessage()
+		connection.WriteMessage("addcorpcredit")
+		message := connection.ReceiveMessage()
+		connection.WriteMessage("quit")
+
+		game := game.Game{}
+		json.Unmarshal([]byte(message), &game)
+
+		assert.Equal(t, 6, game.CorpCredits)
+
+	})
+}
