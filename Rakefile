@@ -36,6 +36,14 @@ task :deps do
   end
 end
 
+namespace :deps do
+  desc "Update a package"
+  task :update, :package do |t, args|
+    rm_rf abs_path("src/#{args[:package]}/")
+    go_command("go get #{args[:package]}")
+  end
+end
+
 desc "format code"
 task :fmt do
   go_command("go fmt netracker/...")

@@ -29,8 +29,8 @@ func TestWebsocketInitialGameState(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		connection := ws.Connect(r, "/ws")
 
-		message := connection.ReceiveMessage()
-		connection.WriteMessage("quit")
+		message, _ := connection.ReceiveMessage()
+		connection.SendMessage("quit")
 
 		game := game.Game{}
 		json.Unmarshal([]byte(message), &game)
@@ -45,10 +45,10 @@ func TestWebsocketInitialGameState(t *testing.T) {
 func TestWebSocketAcceptsMessages(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		connection := ws.Connect(r, "/ws")
-		_ = connection.ReceiveMessage()
-		connection.WriteMessage("addcorpcredit")
-		message := connection.ReceiveMessage()
-		connection.WriteMessage("quit")
+		connection.ReceiveMessage()
+		connection.SendMessage("addcorpcredit")
+		message, _ := connection.ReceiveMessage()
+		connection.SendMessage("quit")
 
 		game := game.Game{}
 		json.Unmarshal([]byte(message), &game)
