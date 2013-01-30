@@ -41,6 +41,7 @@ namespace :deps do
   task :update, :package do |t, args|
     rm_rf abs_path("src/#{args[:package]}/")
     go_command("go get #{args[:package]}")
+    rm_rf abs_path("src/#{args[:package]}/.git")
   end
 end
 

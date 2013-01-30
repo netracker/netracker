@@ -4,28 +4,17 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"log"
 	"net/http"
-	"netracker/connection_manager"
-	"netracker/game"
-	"netracker/parser"
+	"netracker/pairing"
 	"netracker/util"
 )
 
 type Server struct {
-	connectionManager *connection_manager.ConnectionManager
-	messageParser     *parser.MessageParser
-	game              *game.Game
+	pairings []*pairing.Pairing
 }
 
 func New() *Server {
-	game := game.New()
-	messageParser := parser.New(game)
-	connectionManager := connection_manager.New()
 
-	server := &Server{
-		connectionManager: connectionManager,
-		messageParser:     messageParser,
-		game:              game,
-	}
+	server := &Server{}
 
 	return server
 }
@@ -40,7 +29,7 @@ func (server *Server) receiveWebsocketMessage(conn *websocket.Conn) (message str
 	return
 }
 
-func (server *Server) reader(conn *websocket.Conn) {
+func (server *Server) reader(conn *websocket.Conn, pairing *pairing.Pairing) {
 	for {
 		message := server.receiveWebsocketMessage(conn)
 
@@ -50,8 +39,8 @@ func (server *Server) reader(conn *websocket.Conn) {
 
 		log.Printf("Got message: %v", message)
 
-		server.messageParser.Parse(message)
-		server.connectionManager.Broadcast(server.game.ToJson())
+		pairing.Parser.Parse(message)
+		pairing.Broadcast(pairing.Game.ToJson())
 	}
 
 	conn.Close()
@@ -62,18 +51,32 @@ func (server *Server) handler() http.Handler {
 
 	mux.Handle("/", http.FileServer(http.Dir(util.RelativePath("/../../../public"))))
 	mux.Handle("/ws", websocket.Handler(func(conn *websocket.Conn) {
-		server.connectionManager.AddConn(conn)
-		websocket.Message.Send(conn, server.game.ToJson())
-		server.reader(conn)
+		pairing := server.addConnToPairings(conn)
+		websocket.Message.Send(conn, pairing.Game.ToJson())
+		server.reader(conn, pairing)
 	}))
 
 	return mux
 }
 
+func (server *Server) addConnToPairings(conn *websocket.Conn) *pairing.Pairing {
+	if len(server.pairings) < 1 {
+		server.pairings = append(server.pairings, pairing.New())
+	}
+	lastpairing := server.pairings[len(server.pairings)-1]
+	err := lastpairing.AddConn(conn)
+	if err != nil {
+		newpairing := pairing.New()
+		newpairing.AddConn(conn)
+		server.pairings = append(server.pairings, newpairing)
+		return newpairing
+	}
+	return lastpairing
+}
+
 func (server *Server) Run() {
 	log.Print("Starting Netracker Server: http://localhost:3000")
 
-	server.connectionManager.Run()
 	err := http.ListenAndServe(":3000", server.handler())
 
 	if err != nil {

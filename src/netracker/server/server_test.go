@@ -12,8 +12,6 @@ import (
 
 func withServer(f func(*testflight.Requester)) {
 	netrackerServer := New()
-	netrackerServer.connectionManager.Run()
-	defer netrackerServer.connectionManager.Stop()
 	testflight.WithServer(netrackerServer.handler(), f)
 }
 
@@ -28,9 +26,9 @@ func TestRoot(t *testing.T) {
 func TestWebsocketInitialGameState(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		connection := ws.Connect(r, "/ws")
+		defer connection.SendMessage("quit")
 
 		message, _ := connection.ReceiveMessage()
-		connection.SendMessage("quit")
 
 		game := game.Game{}
 		json.Unmarshal([]byte(message), &game)
@@ -45,6 +43,7 @@ func TestWebsocketInitialGameState(t *testing.T) {
 func TestWebSocketAcceptsMessages(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		connection := ws.Connect(r, "/ws")
+		defer connection.SendMessage("quit")
 		connection.ReceiveMessage()
 		connection.SendMessage("addcorpcredit")
 		message, _ := connection.ReceiveMessage()
@@ -55,5 +54,33 @@ func TestWebSocketAcceptsMessages(t *testing.T) {
 
 		assert.Equal(t, 6, game.CorpCredits)
 
+	})
+}
+
+func TestPairsOfConnectionsAreIsolated(t *testing.T) {
+	withServer(func(r *testflight.Requester) {
+		client1 := ws.Connect(r, "/ws")
+		defer client1.SendMessage("quit")
+
+		client2 := ws.Connect(r, "/ws")
+		defer client2.SendMessage("quit")
+
+		client3 := ws.Connect(r, "/ws")
+		defer client3.SendMessage("quit")
+
+		client1.SendMessage("addcorpcredit")
+		client2.FlushMessages(2)
+
+		client3.SendMessage("removecorpcredit")
+		client3.FlushMessages(2)
+
+		game1 := game.Game{}
+		json.Unmarshal([]byte(client2.ReceivedMessages[1]), &game1)
+
+		game2 := game.Game{}
+		json.Unmarshal([]byte(client3.ReceivedMessages[1]), &game2)
+
+		assert.Equal(t, 6, game1.CorpCredits)
+		assert.Equal(t, 4, game2.CorpCredits)
 	})
 }
