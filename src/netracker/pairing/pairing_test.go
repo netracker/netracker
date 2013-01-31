@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestAddConn(t *testing.T){
+func TestAddConn(t *testing.T) {
 	conn := &websocket.Conn{}
 	pairing := New()
 	pairing.AddConn(conn)
@@ -14,7 +14,7 @@ func TestAddConn(t *testing.T){
 	assert.Equal(t, conn, pairing.connections[0])
 }
 
-func TestAddThirdConnReturnsError(t *testing.T){
+func TestAddThirdConnReturnsError(t *testing.T) {
 	conn1 := &websocket.Conn{}
 	conn2 := &websocket.Conn{}
 	conn3 := &websocket.Conn{}

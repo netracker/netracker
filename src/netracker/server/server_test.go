@@ -26,7 +26,7 @@ func TestRoot(t *testing.T) {
 func TestWebsocketInitialGameState(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		connection := ws.Connect(r, "/ws")
-		defer connection.SendMessage("quit")
+		defer connection.Close()
 
 		message, _ := connection.ReceiveMessage()
 
@@ -43,11 +43,11 @@ func TestWebsocketInitialGameState(t *testing.T) {
 func TestWebSocketAcceptsMessages(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		connection := ws.Connect(r, "/ws")
-		defer connection.SendMessage("quit")
+		defer connection.Close()
 		connection.ReceiveMessage()
 		connection.SendMessage("addcorpcredit")
 		message, _ := connection.ReceiveMessage()
-		connection.SendMessage("quit")
+		connection.Close()
 
 		game := game.Game{}
 		json.Unmarshal([]byte(message), &game)
@@ -60,13 +60,13 @@ func TestWebSocketAcceptsMessages(t *testing.T) {
 func TestPairsOfConnectionsAreIsolated(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		client1 := ws.Connect(r, "/ws")
-		defer client1.SendMessage("quit")
+		defer client1.Close()
 
 		client2 := ws.Connect(r, "/ws")
-		defer client2.SendMessage("quit")
+		defer client2.Close()
 
 		client3 := ws.Connect(r, "/ws")
-		defer client3.SendMessage("quit")
+		defer client3.Close()
 
 		client1.SendMessage("addcorpcredit")
 		client2.FlushMessages(2)

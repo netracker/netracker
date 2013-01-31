@@ -19,21 +19,12 @@ func New() *Server {
 	return server
 }
 
-func (server *Server) receiveWebsocketMessage(conn *websocket.Conn) (message string) {
-	err := websocket.Message.Receive(conn, &message)
-	if err != nil {
-		log.Printf("Got error sending WS message: %v", err)
-		return
-	}
-
-	return
-}
-
 func (server *Server) reader(conn *websocket.Conn, pairing *pairing.Pairing) {
 	for {
-		message := server.receiveWebsocketMessage(conn)
+		var message string
+		err := websocket.Message.Receive(conn, &message)
 
-		if message == "quit" {
+		if err != nil {
 			return
 		}
 
