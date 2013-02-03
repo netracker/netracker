@@ -2,6 +2,7 @@ package server
 
 import (
 	"code.google.com/p/go.net/websocket"
+	"encoding/json"
 	"log"
 	"net/http"
 	"netracker/pairing"
@@ -42,6 +43,9 @@ func (server *Server) handler() http.Handler {
 
 	mux.Handle("/", http.FileServer(http.Dir(util.RelativePath("/../../../public"))))
 	mux.Handle("/ws", websocket.Handler(func(conn *websocket.Conn) {
+		pairingsjson, _ := json.Marshal(server.pairings)
+		websocket.Message.Send(conn, string(pairingsjson))
+
 		pairing := server.addConnToPairings(conn)
 		websocket.Message.Send(conn, pairing.Game.ToJson())
 		server.reader(conn, pairing)

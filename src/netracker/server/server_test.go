@@ -6,6 +6,7 @@ import (
 	"github.com/drewolson/testflight"
 	"github.com/drewolson/testflight/ws"
 	"netracker/game"
+	"netracker/pairing"
 	"netracker/player"
 	"testing"
 )
@@ -23,12 +24,29 @@ func TestRoot(t *testing.T) {
 	})
 }
 
+func TestWebsocketListsCurrentPairingsOnConnect(t *testing.T) {
+	withServer(func(r *testflight.Requester) {
+		c1 := ws.Connect(r, "/ws")
+		defer c1.Close()
+		c2 := ws.Connect(r, "/ws")
+		defer c2.Close()
+		c3 := ws.Connect(r, "/ws")
+		defer c3.Close()
+		pairingmessage, _ := c3.ReceiveMessage()
+		var pairings []*pairing.Pairing
+		json.Unmarshal([]byte(pairingmessage), &pairings)
+
+		assert.Equal(t, 1, len(pairings))
+	})
+}
+
 func TestWebsocketInitialGameState(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		connection := ws.Connect(r, "/ws")
 		defer connection.Close()
 
-		message, _ := connection.ReceiveMessage()
+		connection.FlushMessages(2)
+		message := connection.ReceivedMessages[1]
 
 		game := game.Game{}
 		json.Unmarshal([]byte(message), &game)
@@ -44,9 +62,11 @@ func TestWebSocketAcceptsMessages(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		connection := ws.Connect(r, "/ws")
 		defer connection.Close()
-		connection.ReceiveMessage()
+
 		connection.SendMessage("addcorpcredit")
-		message, _ := connection.ReceiveMessage()
+
+		connection.FlushMessages(3)
+		message := connection.ReceivedMessages[2]
 		connection.Close()
 
 		game := game.Game{}
@@ -69,16 +89,16 @@ func TestPairsOfConnectionsAreIsolated(t *testing.T) {
 		defer client3.Close()
 
 		client1.SendMessage("addcorpcredit")
-		client2.FlushMessages(2)
+		client2.FlushMessages(3)
 
 		client3.SendMessage("removecorpcredit")
-		client3.FlushMessages(2)
+		client3.FlushMessages(3)
 
 		game1 := game.Game{}
-		json.Unmarshal([]byte(client2.ReceivedMessages[1]), &game1)
+		json.Unmarshal([]byte(client2.ReceivedMessages[2]), &game1)
 
 		game2 := game.Game{}
-		json.Unmarshal([]byte(client3.ReceivedMessages[1]), &game2)
+		json.Unmarshal([]byte(client3.ReceivedMessages[2]), &game2)
 
 		assert.Equal(t, 6, game1.CorpCredits)
 		assert.Equal(t, 4, game2.CorpCredits)
