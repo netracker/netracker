@@ -29,42 +29,18 @@ func TestWebsocketListsCurrentPairingsOnConnect(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		c1 := ws.Connect(r, "/ws")
 		defer c1.Close()
-		c1.SendMessage("newgame")
+		c1.SendMessage("newgame bar")
 		c2 := ws.Connect(r, "/ws")
 		defer c2.Close()
-		c2.SendMessage("newgame")
+		c2.SendMessage("newgame baz")
 		c3 := ws.Connect(r, "/ws")
 		defer c3.Close()
 		pairingmessage, _ := c3.ReceiveMessage()
 		var pairings []*pairing.Pairing
 		json.Unmarshal([]byte(pairingmessage), &pairings)
 
-		assert.Equal(t, 1, len(pairings))
-		assert.NotEqual(t, nil, pairings[0].Id)
-	})
-}
-
-func TestWebSocketCanStartNewPairing(t *testing.T) {
-	withServer(func(r *testflight.Requester) {
-		connection := ws.Connect(r, "/ws")
-		defer connection.Close()
-
-		connection.SendMessage("pairings")
-		connection.SendMessage("newgame")
-		connection.SendMessage("pairings")
-		connection.FlushMessages(4)
-
-		beforepairingmessage := connection.ReceivedMessages[2]
-		afterpairingmessage := connection.ReceivedMessages[3]
-
-		var beforepairings []*pairing.Pairing
-		json.Unmarshal([]byte(beforepairingmessage), &beforepairings)
-
-		var afterpairings []*pairing.Pairing
-		json.Unmarshal([]byte(afterpairingmessage), &afterpairings)
-
-		assert.Equal(t, 0, len(beforepairings))
-		assert.Equal(t, 1, len(afterpairings))
+		assert.Equal(t, 2, len(pairings))
+		assert.Equal(t, "bar", pairings[0].Id)
 	})
 }
 
@@ -77,7 +53,7 @@ func TestWebsocketCanJoinPairingInProgress(t *testing.T) {
 		client2 := ws.Connect(r, "/ws")
 		defer client2.Close()
 
-		client1.SendMessage("newgame")
+		client1.SendMessage("newgame bar")
 		client2.SendMessage("pairings")
 
 		client1.FlushMessages(2)
@@ -86,7 +62,7 @@ func TestWebsocketCanJoinPairingInProgress(t *testing.T) {
 		pairingmessages := client2.ReceivedMessages[1]
 		fmt.Println(pairingmessages)
 
-		client2.SendMessage("join id")
+		client2.SendMessage("join bar")
 
 		client1.SendMessage("addcorpcredit")
 		client1.FlushMessages(2)
@@ -104,7 +80,7 @@ func TestWebsocketInitialPairingState(t *testing.T) {
 		connection := ws.Connect(r, "/ws")
 		defer connection.Close()
 
-		connection.SendMessage("newgame")
+		connection.SendMessage("newgame myid")
 
 		connection.FlushMessages(2)
 		message := connection.ReceivedMessages[1]
@@ -116,6 +92,14 @@ func TestWebsocketInitialPairingState(t *testing.T) {
 		assert.Equal(t, 5, game.RunnerCredits)
 		assert.Equal(t, player.CORP, game.ActivePlayer.Role)
 		assert.Equal(t, 0, game.Clicks)
+
+		connection.SendMessage("pairings")
+		pairingmessage, _ := connection.ReceiveMessage()
+
+		var pairings []*pairing.Pairing
+		json.Unmarshal([]byte(pairingmessage), &pairings)
+		fmt.Println(pairings)
+		assert.Equal(t, "myid", pairings[0].Id)
 	})
 }
 
@@ -123,7 +107,7 @@ func TestWebSocketAcceptsMessages(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		connection := ws.Connect(r, "/ws")
 		defer connection.Close()
-		connection.SendMessage("newgame")
+		connection.SendMessage("newgame foo")
 		connection.SendMessage("addcorpcredit")
 
 		err := connection.FlushMessages(3)
@@ -144,15 +128,15 @@ func TestPairsOfConnectionsAreIsolated(t *testing.T) {
 	withServer(func(r *testflight.Requester) {
 		client1 := ws.Connect(r, "/ws")
 		defer client1.Close()
-		client1.SendMessage("newgame")
+		client1.SendMessage("newgame bar")
 
 		client2 := ws.Connect(r, "/ws")
 		defer client2.Close()
-		client2.SendMessage("newgame")
+		client2.SendMessage("join bar")
 
 		client3 := ws.Connect(r, "/ws")
 		defer client3.Close()
-		client3.SendMessage("newgame")
+		client3.SendMessage("newgame baz")
 
 		client1.SendMessage("addcorpcredit")
 		client2.FlushMessages(3)

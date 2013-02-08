@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"netracker/pairing"
 	"netracker/util"
+	"strings"
 )
 
 type Server struct {
@@ -32,15 +33,16 @@ func (server *Server) reader(conn *websocket.Conn) {
 		}
 
 		log.Printf("Got message: %v", message)
-
 		if message == "pairings" {
 			pairingjson, _ := json.Marshal(server.pairings)
 			websocket.Message.Send(conn, string(pairingjson))
-		} else if message == "newgame" && paired == nil {
-			paired = server.addConnToPairings(conn)
+		} else if strings.Contains(message, "newgame") && paired == nil {
+			pairId := strings.SplitN(message, " ", 2)[1]
+			paired = server.addConnToPairings(pairId, conn)
 			paired.Broadcast(paired.Game.ToJson())
-		} else if message == "join id" && paired == nil {
-			paired = server.addConnToPairings(conn)
+		} else if strings.Contains(message, "join") && paired == nil {
+			pairId := strings.SplitN(message, " ", 2)[1]
+			paired = server.addConnToPairings(pairId, conn)
 			paired.Broadcast(paired.Game.ToJson())
 		} else {
 			paired.Parser.Parse(message)
@@ -64,19 +66,25 @@ func (server *Server) handler() http.Handler {
 	return mux
 }
 
-func (server *Server) addConnToPairings(conn *websocket.Conn) *pairing.Pairing {
-	if len(server.pairings) < 1 {
-		server.pairings = append(server.pairings, pairing.New("id"))
+func (server *Server) findOrCreatePairing(pairId string) (newpairing *pairing.Pairing) {
+	for _, pairing := range server.pairings {
+		if pairing.Id == pairId {
+			newpairing = pairing
+			return
+		}
 	}
-	lastpairing := server.pairings[len(server.pairings)-1]
-	err := lastpairing.AddConn(conn)
+	newpairing = pairing.New(pairId)
+	server.pairings = append(server.pairings, newpairing)
+	return
+}
+
+func (server *Server) addConnToPairings(pairId string, conn *websocket.Conn) *pairing.Pairing {
+	pairing := server.findOrCreatePairing(pairId)
+	err := pairing.AddConn(conn)
 	if err != nil {
-		newpairing := pairing.New("id")
-		newpairing.AddConn(conn)
-		server.pairings = append(server.pairings, newpairing)
-		return newpairing
+		return nil
 	}
-	return lastpairing
+	return pairing
 }
 
 func (server *Server) Run() {
