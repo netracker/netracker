@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"netracker/pairing"
 	"netracker/util"
+	"os"
 	"strings"
 )
 
@@ -116,6 +117,10 @@ func (server *Server) addConnToPairings(pairId string, conn *websocket.Conn) *pa
 func (server *Server) Run() {
 	log.Print("Starting Netracker Server: http://localhost:3000")
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
 	err := http.ListenAndServe(":3000", server.handler())
 
 	if err != nil {
