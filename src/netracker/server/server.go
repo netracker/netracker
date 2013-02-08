@@ -21,6 +21,40 @@ func New() *Server {
 	return server
 }
 
+type method func(string, *Server, *websocket.Conn) *pairing.Pairing
+
+func pairings(message string, server *Server, conn *websocket.Conn) *pairing.Pairing {
+	pairingjson, _ := json.Marshal(server.pairings)
+	websocket.Message.Send(conn, string(pairingjson))
+	return nil
+}
+
+func newGame(message string, server *Server, conn *websocket.Conn) *pairing.Pairing {
+	pairId := strings.SplitN(message, " ", 2)[1]
+	paired := server.addConnToPairings(pairId, conn)
+	paired.Broadcast(paired.Game.ToJson())
+	return paired
+}
+
+func join(message string, server *Server, conn *websocket.Conn) *pairing.Pairing {
+	pairId := strings.SplitN(message, " ", 2)[1]
+	paired := server.addConnToPairings(pairId, conn)
+	paired.Broadcast(paired.Game.ToJson())
+	return paired
+}
+
+func parseMessage(message string) method {
+	if message == "pairings" {
+		return pairings
+	} else if strings.Contains(message, "newgame") {
+		return newGame
+	} else if strings.Contains(message, "join") {
+		return join
+	}
+
+	return nil
+}
+
 func (server *Server) reader(conn *websocket.Conn) {
 
 	var paired *pairing.Pairing = nil
@@ -33,17 +67,9 @@ func (server *Server) reader(conn *websocket.Conn) {
 		}
 
 		log.Printf("Got message: %v", message)
-		if message == "pairings" {
-			pairingjson, _ := json.Marshal(server.pairings)
-			websocket.Message.Send(conn, string(pairingjson))
-		} else if strings.Contains(message, "newgame") && paired == nil {
-			pairId := strings.SplitN(message, " ", 2)[1]
-			paired = server.addConnToPairings(pairId, conn)
-			paired.Broadcast(paired.Game.ToJson())
-		} else if strings.Contains(message, "join") && paired == nil {
-			pairId := strings.SplitN(message, " ", 2)[1]
-			paired = server.addConnToPairings(pairId, conn)
-			paired.Broadcast(paired.Game.ToJson())
+		action := parseMessage(message)
+		if action != nil {
+			paired = action(message, server, conn)
 		} else {
 			paired.Parser.Parse(message)
 			paired.Broadcast(paired.Game.ToJson())
