@@ -10,6 +10,7 @@ type Pairing struct {
 	connections []*websocket.Conn
 	Game        *game.Game
 	Parser      *parser.MessageParser
+	Id          string
 }
 
 type FullPairingError struct {
@@ -19,11 +20,12 @@ func (error *FullPairingError) Error() string {
 	return "Pairing is full"
 }
 
-func New() *Pairing {
+func New(id string) *Pairing {
 	game := game.New()
 	return &Pairing{
 		Game:   game,
 		Parser: parser.New(game),
+		Id:     id,
 	}
 }
 

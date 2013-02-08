@@ -8,7 +8,7 @@ import (
 
 func TestAddConn(t *testing.T) {
 	conn := &websocket.Conn{}
-	pairing := New()
+	pairing := New("myid")
 	pairing.AddConn(conn)
 
 	assert.Equal(t, conn, pairing.connections[0])
@@ -18,7 +18,7 @@ func TestAddThirdConnReturnsError(t *testing.T) {
 	conn1 := &websocket.Conn{}
 	conn2 := &websocket.Conn{}
 	conn3 := &websocket.Conn{}
-	pairing := New()
+	pairing := New("myid")
 
 	pairing.AddConn(conn1)
 	pairing.AddConn(conn2)

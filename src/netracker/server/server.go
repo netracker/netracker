@@ -20,7 +20,9 @@ func New() *Server {
 	return server
 }
 
-func (server *Server) reader(conn *websocket.Conn, pairing *pairing.Pairing) {
+func (server *Server) reader(conn *websocket.Conn) {
+
+	var paired *pairing.Pairing = nil
 	for {
 		var message string
 		err := websocket.Message.Receive(conn, &message)
@@ -31,8 +33,19 @@ func (server *Server) reader(conn *websocket.Conn, pairing *pairing.Pairing) {
 
 		log.Printf("Got message: %v", message)
 
-		pairing.Parser.Parse(message)
-		pairing.Broadcast(pairing.Game.ToJson())
+		if message == "pairings" {
+			pairingjson, _ := json.Marshal(server.pairings)
+			websocket.Message.Send(conn, string(pairingjson))
+		} else if message == "newgame" && paired == nil {
+			paired = server.addConnToPairings(conn)
+			paired.Broadcast(paired.Game.ToJson())
+		} else if message == "join id" && paired == nil {
+			paired = server.addConnToPairings(conn)
+			paired.Broadcast(paired.Game.ToJson())
+		} else {
+			paired.Parser.Parse(message)
+			paired.Broadcast(paired.Game.ToJson())
+		}
 	}
 
 	conn.Close()
@@ -45,10 +58,7 @@ func (server *Server) handler() http.Handler {
 	mux.Handle("/ws", websocket.Handler(func(conn *websocket.Conn) {
 		pairingsjson, _ := json.Marshal(server.pairings)
 		websocket.Message.Send(conn, string(pairingsjson))
-
-		pairing := server.addConnToPairings(conn)
-		websocket.Message.Send(conn, pairing.Game.ToJson())
-		server.reader(conn, pairing)
+		server.reader(conn)
 	}))
 
 	return mux
@@ -56,12 +66,12 @@ func (server *Server) handler() http.Handler {
 
 func (server *Server) addConnToPairings(conn *websocket.Conn) *pairing.Pairing {
 	if len(server.pairings) < 1 {
-		server.pairings = append(server.pairings, pairing.New())
+		server.pairings = append(server.pairings, pairing.New("id"))
 	}
 	lastpairing := server.pairings[len(server.pairings)-1]
 	err := lastpairing.AddConn(conn)
 	if err != nil {
-		newpairing := pairing.New()
+		newpairing := pairing.New("id")
 		newpairing.AddConn(conn)
 		server.pairings = append(server.pairings, newpairing)
 		return newpairing
